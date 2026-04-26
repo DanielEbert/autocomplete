@@ -1,71 +1,56 @@
-# autocomplete README
+# fast-llama
 
-This is the README for your extension "autocomplete". After writing up a brief description, we recommend including the following sections.
+VS Code extension for local LLM code completion via llama-server.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+- **Inline completions** - Ghost text suggestions as you type
+- **Ring buffer context** - Captures nearby code around cursor for smarter completions
+- **KV cache pre-warming** - Idle-time context embedding for faster responses
+- **Prefix cache** - Rolling substring matching for instant cache hits
+- **Speculative completion** -预测 next token when you hit Tab
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- VS Code
+- llama-server running
+- A code model (qwen3.5-coder, etc.)
 
-## Extension Settings
+## Installation
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+```bash
+npm install
+```
 
-For example:
+## Configuration
 
-This extension contributes the following settings:
+Set `fastLlama.endpoint` in VS Code settings:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+```json
+{
+  "fastLlama.endpoint": "http://localhost:28582"
+}
+```
 
-## Known Issues
+Or use `.vscode/settings.json` in the project.
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+## Usage
 
-## Release Notes
+1. Start llama-server with a code model:
 
-Users appreciate release notes as you update your extension.
+   ```bash
+   llama-server -m hf_hub_sloth/Qwen3-Coder-30B-A3B-Instruct-GGUF:Q5_K_M -ngl 999 -c 24576 -fao n --port 28582 --host 127.0.0.1
+   ```
 
-### 1.0.0
+2. Open a code file in VS Code
 
-Initial release of ...
+3. Completions appear automatically as ghost text
 
-### 1.0.1
+4. Press Tab to accept, Escape to dismiss
 
-Fixed issue #.
+## How It Works
 
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+- **Context capture**: On cursor move >32 lines or file switch, captures surrounding code chunk
+- **Infill API**: Sends prefix+suffix to Ollama's `/infill` endpoint
+- **Debounce**: 20ms delay avoids mid-word requests
+- **Abort**: Cancels pending requests when user keeps typing
